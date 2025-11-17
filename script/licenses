@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export PATH=$PATH:$(go env GOPATH)/bin
 go install github.com/google/go-licenses@latest
 
 rm -rf third-party
