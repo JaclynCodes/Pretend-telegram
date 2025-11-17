@@ -1,4 +1,4 @@
-version: "2"
+# version: "2"  # Commented out as it's not needed for newer golangci-lint versions
 run:
   concurrency: 4
   tests: true
@@ -11,27 +11,20 @@ linters:
     - misspell
     - nakedret
     - revive
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
-  settings:
-    staticcheck:
-      checks:
-        - "all"
-        - -QF1008
-        - -ST1000
-formatters:
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+
+issues:
+  exclude-dirs:
+    - vendor
+    - third_party
+    - builtin
+    - examples
+  exclude-files:
+    - ".*\\.pb\\.go$"
+  exclude-generated: strict
+
+linters-settings:
+  staticcheck:
+    checks:
+      - "all"
+      - -QF1008
+      - -ST1000

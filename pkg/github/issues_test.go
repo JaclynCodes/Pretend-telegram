@@ -1479,7 +1479,7 @@ func TestAssignCopilotToIssue(t *testing.T) {
 	var pageOfFakeBots = func(n int) []struct{} {
 		// We don't _really_ need real bots here, just objects that count as entries for the page
 		bots := make([]struct{}, n)
-		for i := range n {
+		for i := 0; i < n; i++ {
 			bots[i] = struct{}{}
 		}
 		return bots
