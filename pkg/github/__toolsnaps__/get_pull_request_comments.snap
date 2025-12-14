@@ -5,6 +5,7 @@
   },
   "description": "Get comments for a specific pull request.",
   "inputSchema": {
+    "type": "object",
     "properties": {
       "owner": {
         "description": "Repository owner",
@@ -23,8 +24,7 @@
       "owner",
       "repo",
       "pullNumber"
-    ],
-    "type": "object"
+    ]
   },
   "name": "get_pull_request_comments"
 }

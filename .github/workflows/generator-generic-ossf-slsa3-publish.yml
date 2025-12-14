@@ -11,6 +11,8 @@
 # For more information about SLSA and how it improves the supply-chain, visit slsa.dev.
 
 name: SLSA generic generator
+permissions:
+  contents: read
 on:
   workflow_dispatch:
   release:
