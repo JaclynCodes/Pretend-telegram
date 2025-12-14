@@ -5,7 +5,7 @@ go 1.23.7
 require (
 	github.com/google/go-github/v74 v74.0.0
 	github.com/josephburnett/jd v1.9.2
-	github.com/mark3labs/mcp-go v0.39.1
+	github.com/mark3labs/mcp-go v0.43.2
 	github.com/migueleliasweb/go-github-mock v1.3.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -21,8 +21,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
-	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
