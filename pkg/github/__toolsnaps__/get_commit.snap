@@ -5,6 +5,7 @@
   },
   "description": "Get details for a commit from a GitHub repository",
   "inputSchema": {
+    "type": "object",
     "properties": {
       "owner": {
         "description": "Repository owner",
@@ -34,8 +35,7 @@
       "owner",
       "repo",
       "sha"
-    ],
-    "type": "object"
+    ]
   },
   "name": "get_commit"
 }

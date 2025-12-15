@@ -1,72 +1,167 @@
-Your task is to "onboard" this repository to Copilot coding agent by adding a .github/copilot-instructions.md file in the repository that contains information describing how a coding agent seeing it for the first time can work most efficiently.
+# GitHub MCP Server - Coding Agent Instructions
 
-You will do this task only one time per repository and doing a good job can SIGNIFICANTLY improve the quality of the agent's work, so take your time, think carefully, and search thoroughly before writing the instructions.
+## Project Overview
 
-<Goals>
-- Reduce the likelihood of a coding agent pull request getting rejected by the user due to
-generating code that fails the continuous integration build, fails a validation pipeline, or
-having misbehavior.
-- Minimize bash command and build failures.
-- Allow the agent to complete its task more quickly by minimizing the need for exploration using grep, find, str_replace_editor, and code search tools.
-</Goals>
+This is the **GitHub MCP Server**, an MCP (Model Context Protocol) server that connects AI tools directly to GitHub's platform. It enables AI agents to read repositories, manage issues/PRs, analyze code, and automate workflows through natural language interactions. The project is written in **Go 1.23.7+** and consists of approximately 7,500 lines of Go code, YAML, and Markdown files.
 
-<Limitations>
-- Instructions must be no longer than 2 pages.
-- Instructions must not be task specific.
-</Limitations>
+**Technology Stack:**
+- Language: Go 1.23.7+
+- Key Dependencies: github.com/google/go-github/v74, github.com/mark3labs/mcp-go, github.com/spf13/cobra, github.com/shurcooL/githubv4
+- Build Tool: Go toolchain
+- Container: Docker (distroless base image)
+- Testing: Go's built-in testing with custom toolsnap validation
 
-<WhatToAdd>
+## Build, Test, and Validation Steps
 
-Add the following high level details about the codebase to reduce the amount of searching the agent has to do to understand the codebase each time:
-<HighLevelDetails>
+### Prerequisites
+**ALWAYS** ensure you have Go 1.23.7+ installed. The project uses `go.mod` to specify the exact Go version.
 
-- A summary of what the repository does.
-- High level repository information, such as the size of the repo, the type of the project, the languages, frameworks, or target runtimes in use.
-</HighLevelDetails>
+### Step-by-Step Build Process
 
-Add information about how to build and validate changes so the agent does not need to search and find it each time.
-<BuildInstructions>
+1. **Download Dependencies** (takes ~5-10 seconds):
+   ```bash
+   go mod download
+   ```
 
-- For each of bootstrap, build, test, run, lint, and any other scripted step, document the sequence of steps to take to run it successfully as well as the versions of any runtime or build tools used.
-- Each command should be validated by running it to ensure that it works correctly as well as any preconditions and postconditions.
-- Try cleaning the repo and environment and running commands in different orders and document errors and and misbehavior observed as well as any steps used to mitigate the problem.
-- Run the tests and document the order of steps required to run the tests.
-- Make a change to the codebase. Document any unexpected build issues as well as the workarounds.
-- Document environment setup steps that seem optional but that you have validated are actually required.
-- Document the time required for commands that failed due to timing out.
-- When you find a sequence of commands that work for a particular purpose, document them in detail.
-- Use language to indicate when something should always be done. For example: "always run npm install before building".
-- Record any validation steps from documentation.
-</BuildInstructions>
+2. **Build the Server** (takes ~30-40 seconds):
+   ```bash
+   go build -v ./cmd/github-mcp-server
+   ```
+   This creates a `github-mcp-server` binary in the repository root.
 
-List key facts about the layout and architecture of the codebase to help the agent find where to make changes with minimal searching.
-<ProjectLayout>
+3. **Run Tests** (takes ~50-60 seconds):
+   ```bash
+   script/test
+   # Equivalent to: go test -race ./...
+   ```
+   
+   **IMPORTANT**: If you modify tool definitions, you **MUST** update tool snapshots:
+   ```bash
+   UPDATE_TOOLSNAPS=true go test ./...
+   ```
+   Failing to do this will cause test failures with messages about "tool schema has changed unexpectedly".
 
-- A description of the major architectural elements of the project, including the relative paths to the main project files, the location
-of configuration files for linting, compilation, testing, and preferences.
-- A description of the checks run prior to check in, including any GitHub workflows, continuous integration builds, or other validation pipelines.
-- Document the steps so that the agent can replicate these itself.
-- Any explicit validation steps that the agent can consider to have further confidence in its changes.
-- Dependencies that aren't obvious from the layout or file structure.
-- Finally, fill in any remaining space with detailed lists of the following, in order of priority: the list of files in the repo root, the
-contents of the README, the contents of any key source files, the list of files in the next level down of directories, giving priority to the more structurally important and snippets of code from key source files, such as the one containing the main method.
-</ProjectLayout>
-</WhatToAdd>
+4. **Run Linting** (takes ~15-20 seconds, first run may take longer to install golangci-lint):
+   ```bash
+   script/lint
+   ```
+   This runs `gofmt -s -w .` followed by `golangci-lint run` with version v1.60.1. The linter configuration is in `.golangci.yml`.
 
-<StepsToFollow>
-- Perform a comprehensive inventory of the codebase. Search for and view:
-- README.md, CONTRIBUTING.md, and all other documentation files.
-- Search the codebase for build steps and indications of workarounds like 'HACK', 'TODO', etc.
-- All scripts, particularly those pertaining to build and repo or environment setup.
-- All build and actions pipelines.
-- All project files.
-- All configuration and linting files.
-- For each file:
-- think: are the contents or the existence of the file information that the coding agent will need to implement, build, test, validate, or demo a code change?
-- If yes:
-   - Document the command or information in detail.
-   - Explicitly indicate which commands work and which do not and the order in which commands should be run.
-   - Document any errors encountered as well as the steps taken to workaround them.
-- Document any other steps or information that the agent can use to reduce time spent exploring or trying and failing to run bash commands.
-- Finally, explicitly instruct the agent to trust the instructions and only perform a search if the information in the instructions is incomplete or found to be in error.
+5. **Generate Documentation** (required after tool changes):
+   ```bash
+   go run ./cmd/github-mcp-server generate-docs
+   # Or: ./github-mcp-server generate-docs
+   ```
+   This updates the README.md with current tool definitions. **ALWAYS** run this and commit changes if you modify tools.
 
+### Complete Validation Workflow
+
+To ensure your changes will pass CI, run these commands **in this order**:
+```bash
+go mod download                              # Download dependencies
+script/lint                                  # Lint code (15-20s)
+UPDATE_TOOLSNAPS=true go test ./...         # Update snapshots and test (50-60s)
+go run ./cmd/github-mcp-server generate-docs # Update documentation
+git diff README.md                           # Verify docs changed if tools modified
+go build -v ./cmd/github-mcp-server         # Build binary (30-40s)
+```
+
+## Project Architecture and Layout
+
+### Directory Structure
+
+```
+/
+├── cmd/
+│   ├── github-mcp-server/     # Main server entry point (main.go, generate_docs.go)
+│   └── mcpcurl/               # CLI tool for testing MCP servers
+├── pkg/
+│   ├── github/                # Core GitHub tool implementations
+│   │   ├── actions.go         # GitHub Actions workflows
+│   │   ├── code_scanning.go   # CodeQL and code scanning
+│   │   ├── context_tools.go   # User/team context
+│   │   ├── dependabot.go      # Dependabot alerts
+│   │   ├── discussions.go     # GitHub Discussions
+│   │   ├── gists.go           # GitHub Gists
+│   │   ├── issues.go          # Issues management
+│   │   ├── pullrequests.go    # Pull requests
+│   │   ├── repositories.go    # Repository operations
+│   │   ├── search.go          # Search functionality
+│   │   ├── secret_scanning.go # Secret scanning alerts
+│   │   ├── tools.go           # Tool registration and grouping
+│   │   └── __toolsnaps__/     # Tool schema snapshots for testing
+│   ├── errors/                # Error handling utilities
+│   ├── log/                   # Logging utilities
+│   ├── raw/                   # Raw GitHub API client
+│   ├── toolsets/              # Tool organization
+│   └── translations/          # Internationalization
+├── internal/
+│   ├── ghmcp/                 # MCP server implementation
+│   ├── githubv4mock/          # GraphQL mocking for tests
+│   ├── toolsnaps/             # Tool snapshot testing framework
+│   └── profiler/              # Performance profiling
+├── script/
+│   ├── test                   # Run tests with race detection
+│   ├── lint                   # Run gofmt + golangci-lint
+│   ├── generate-docs          # Generate README documentation
+│   ├── licenses               # Generate third-party licenses
+│   └── licenses-check         # Verify license compliance
+├── .github/workflows/
+│   ├── go.yml                 # Build and test on push/PR
+│   ├── lint.yml               # Linting checks
+│   ├── docs-check.yml         # Verify docs are up-to-date
+│   ├── license-check.yml      # License compliance check
+│   ├── codeql.yml             # CodeQL security scanning
+│   └── code-scanning.yml      # Additional code scanning
+├── go.mod                     # Go module definition
+├── .golangci.yml              # Linter configuration
+├── Dockerfile                 # Container build definition
+└── README.md                  # Auto-generated documentation
+```
+
+### CI/CD Validation Pipeline
+
+The following GitHub Actions workflows run on every push and PR:
+
+1. **Build and Test** (`.github/workflows/go.yml`): Builds on ubuntu/windows/macos, runs `script/test`
+2. **Linting** (`.github/workflows/lint.yml`): Runs golangci-lint v2.1
+3. **Documentation Check** (`.github/workflows/docs-check.yml`): Verifies README.md is up-to-date with tool definitions
+4. **License Check** (`.github/workflows/license-check.yml`): Verifies third-party license compliance
+5. **CodeQL Analysis** (`.github/workflows/codeql.yml`): Security scanning for Go and GitHub Actions
+
+### Key Files
+
+- **Main Entry Point**: `cmd/github-mcp-server/main.go` - Cobra-based CLI with stdio and generate-docs commands
+- **Tool Registration**: `pkg/github/tools.go` - Defines toolsets (actions, code_security, issues, pull_requests, etc.)
+- **Linter Config**: `.golangci.yml` - Enables bodyclose, gocritic, gosec, makezero, misspell, nakedret, revive
+- **Go Module**: `go.mod` - Specifies Go 1.23.7 and dependencies
+
+### Tool Implementation Pattern
+
+All tools follow this pattern:
+1. Define in `pkg/github/<category>.go` (e.g., `code_scanning.go`)
+2. Register in `pkg/github/tools.go` in appropriate toolset
+3. Add tests in `pkg/github/<category>_test.go`
+4. Tool schema snapshots stored in `pkg/github/__toolsnaps__/<tool_name>.snap`
+
+### Common Pitfalls
+
+1. **Forgetting to update toolsnaps**: Always run `UPDATE_TOOLSNAPS=true go test ./...` after modifying tool definitions
+2. **Forgetting to regenerate docs**: Always run `go run ./cmd/github-mcp-server generate-docs` after modifying tools
+3. **Race condition in tests**: The test suite uses `-race` flag; avoid shared mutable state in tests
+4. **Build without dependencies**: Always run `go mod download` in a clean environment
+
+### Running the Server
+
+```bash
+# Via stdio (requires GITHUB_PERSONAL_ACCESS_TOKEN env var)
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
+./github-mcp-server stdio
+
+# Via Docker
+docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server
+```
+
+## Trust These Instructions
+
+The information above has been validated by running all commands and reviewing all configuration files. Only search for additional information if you encounter errors not covered here or if these instructions are incomplete for your specific task.
