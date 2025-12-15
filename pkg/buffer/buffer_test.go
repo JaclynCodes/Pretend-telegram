@@ -2,6 +2,7 @@ package buffer
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -215,7 +216,7 @@ func TestProcessResponseAsRingBufferToEnd_RingBufferCorrectness(t *testing.T) {
 		// Create 100 lines but only keep last 7
 		lines := make([]string, 100)
 		for i := range 100 {
-			lines[i] = "line" + strings.Repeat("0", 3-len(string(rune('0'+i/10)))) + string(rune('0'+i/10)) + string(rune('0'+i%10))
+			lines[i] = fmt.Sprintf("line%03d", i)
 		}
 		body := strings.Join(lines, "\n")
 		resp := mockHTTPResponse(body)
