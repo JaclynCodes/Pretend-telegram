@@ -26,8 +26,11 @@ import (
 // The function uses a ring buffer to efficiently store only the last maxJobLogLines lines.
 // If the response contains more lines than maxJobLogLines, only the most recent lines are kept.
 func ProcessResponseAsRingBufferToEnd(httpResp *http.Response, maxJobLogLines int) (string, int, *http.Response, error) {
+	if maxJobLogLines <= 0 {
+		return "", 0, httpResp, nil
+	}
+
 	lines := make([]string, maxJobLogLines)
-	validLines := make([]bool, maxJobLogLines)
 	totalLines := 0
 	writeIndex := 0
 
@@ -35,11 +38,8 @@ func ProcessResponseAsRingBufferToEnd(httpResp *http.Response, maxJobLogLines in
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	for scanner.Scan() {
-		line := scanner.Text()
+		lines[writeIndex] = scanner.Text()
 		totalLines++
-
-		lines[writeIndex] = line
-		validLines[writeIndex] = true
 		writeIndex = (writeIndex + 1) % maxJobLogLines
 	}
 
@@ -47,22 +47,24 @@ func ProcessResponseAsRingBufferToEnd(httpResp *http.Response, maxJobLogLines in
 		return "", 0, httpResp, fmt.Errorf("failed to read log content: %w", err)
 	}
 
-	var result []string
+	// Calculate how many lines we actually have in the buffer
 	linesInBuffer := totalLines
 	if linesInBuffer > maxJobLogLines {
 		linesInBuffer = maxJobLogLines
 	}
 
+	// Pre-allocate the result slice for efficiency
+	result := make([]string, linesInBuffer)
+
+	// Determine the starting index for reading from the ring buffer
 	startIndex := 0
 	if totalLines > maxJobLogLines {
 		startIndex = writeIndex
 	}
 
+	// Copy lines from ring buffer to result in correct order
 	for i := 0; i < linesInBuffer; i++ {
-		idx := (startIndex + i) % maxJobLogLines
-		if validLines[idx] {
-			result = append(result, lines[idx])
-		}
+		result[i] = lines[(startIndex+i)%maxJobLogLines]
 	}
 
 	return strings.Join(result, "\n"), totalLines, httpResp, nil
