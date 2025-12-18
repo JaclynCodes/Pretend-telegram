@@ -4,8 +4,8 @@
 # To make this agent available, merge this file into the default repository branch.
 # For format details, see: https://gh.io/customagents/config
 
-name:
-description:
+name: My Custom GitHub Agent
+description: An agent that automates repository tasks and assists with issues, PRs, and code analysis.
 ---
 
 # My Agent

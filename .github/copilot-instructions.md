@@ -45,7 +45,7 @@ This is the **GitHub MCP Server**, an MCP (Model Context Protocol) server that c
    ```bash
    script/lint
    ```
-   This runs `gofmt -s -w .` followed by `golangci-lint run` with version v2.1. The linter configuration is in `.golangci.yml`.
+   This runs `gofmt -s -w .` followed by `golangci-lint run` with version v1.60.1. The linter configuration is in `.golangci.yml`.
 
 5. **Generate Documentation** (required after tool changes):
    ```bash
